@@ -1,5 +1,5 @@
 //
-//  vonage.swift
+//  CallController.swift
 //  VonageSDKClientVOIPExample
 //
 //  Created by Ashley Arthur on 12/02/2023.
@@ -12,7 +12,6 @@ import Combine
 import VonageClientSDKVoice
 
 typealias CallStream = AnyPublisher<Call,Never>
-//typealias CXActionResult = (UUID,Error?)
 
 protocol CallController {
     // Public Stream of calls to drive custom UIs
@@ -34,7 +33,6 @@ protocol CallController {
 
 class VonageCallController: NSObject {
     var cancellables = Set<AnyCancellable>()
-//    let actions = PassthroughSubject<CXActionResult, Never>()
     
     // VGClient
     let client: VGVoiceClient
@@ -80,12 +78,7 @@ class VonageCallController: NSObject {
 }
 
 extension VonageCallController: CallController {
-//    var cxactions: AnyPublisher<CXActionResult, Never> {
-//        return actions.eraseToAnyPublisher()
-//    }
-    
-    // Calls updates are 'demuxed' into seperate streams
-    // to help down stream subscribers (like UIs)
+    // Calls updates are 'demuxed' into seperate streams to help  subscribers (like UIs)
     // concentrate on specific call updates
     var calls: AnyPublisher<CallStream,Never> {
         return vonageCalls.map { call in
@@ -109,7 +102,7 @@ extension VonageCallController: CallController {
 
     func reportCXAction(_ cxaction: CXAction) {
         cxController.requestTransaction(with: [cxaction], completion: { err in
-//            self.actions.send((cxaction.uuid,$0))
+            // TODO
         })
     }
     
@@ -117,9 +110,9 @@ extension VonageCallController: CallController {
         vonageToken.value = token
     }
     
-    // Normally we just forward CXActions to Callkit when interacting with calls
-    // but we special case the start of outbound calls so we can ensure the correct UUID can be
-    // provided to Callkit
+    // Normally we just forward all CXActions to Callkit
+    // but we special case the start of outbound calls
+    // so we can ensure the correct UUID can be provided to Callkit
     func startOutboundCall(_ context: [String : String]) -> UUID {
         let tid = UUID()
         
@@ -135,7 +128,7 @@ extension VonageCallController: CallController {
                     p(err != nil ? Result.failure(err!) : Result.success(callId!))
                 }
             }
-            .first() // TODO
+            .first()
         }
             
         call.asResult()
@@ -158,7 +151,7 @@ extension VonageCallController: CallController {
     func registerPushTokens(_ t: PushToken) {
         vonageSession.compactMap {$0}.first().sink { _ in
             self.client.registerDevicePushToken(t.voip, userNotificationToken: t.user, isSandbox: true) { err,device in
-                // TODO...
+                // TODO:
             }
         }
         .store(in: &cancellables)
@@ -169,8 +162,7 @@ extension VonageCallController {
     
     func bindCallController() {
         
-        // TODO: Remove once fixed in SDK
-        // we need to 'prewarm' core's state so we can do push from cold start later...
+        // TODO: PR-371
         vonageToken.compactMap { $0 }.filter { $0 != "" } .first().flatMap { _ in
             Future<String?,Error> { p in
                 self.client.createSession(self.vonageToken.value ?? "") { err, session in

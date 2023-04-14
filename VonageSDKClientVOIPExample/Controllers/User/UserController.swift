@@ -1,5 +1,5 @@
 //
-//  Auth.swift
+//  UserController.swift
 //  VonageSDKClientVOIPExample
 //
 //  Created by Ashley Arthur on 25/01/2023.
@@ -20,6 +20,8 @@ class UserController: NSObject {
     var user =  CurrentValueSubject<(User,UserToken)?,UserControllerErrors>(nil)
     
     func login(username:String, pword:String) {
+        
+        // Dummy Implementation for testing purposes
         let token = ""
         
         user.send((User(uname: "ash"), token))

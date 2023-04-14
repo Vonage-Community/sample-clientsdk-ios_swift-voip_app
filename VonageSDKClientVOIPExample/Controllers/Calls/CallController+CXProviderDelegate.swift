@@ -31,7 +31,7 @@ extension VonageCallController: CXProviderDelegate {
         
         self.client.answer(action.callUUID.toVGCallID()) { err in
             guard err == nil else {
-                // TODO: Should we reject ?
+                // TODO:
                 provider.reportCall(with: action.callUUID, endedAt: Date.now, reason: .failed)
                 self.vonageCallUpdates.send((action.callUUID, .completed(remote: false, reason: .failed)))
                 return
@@ -49,12 +49,12 @@ extension VonageCallController: CXProviderDelegate {
                 
         if case .inbound(_,_,.ringing) = call {
             self.client.reject(action.callUUID.toVGCallID()){ err in
-                // TODO: What todo About errors
+                // TODO:
             }
         }
         else {
             self.client.hangup(action.callUUID.toVGCallID()){ err in
-                // TODO: What todo About errors
+                // TODO:
             }
         }
                            
@@ -69,12 +69,12 @@ extension VonageCallController: CXProviderDelegate {
         
         if (action.isMuted == true) {
             self.client.mute(action.callUUID.toVGCallID()) { err in
-                // TODO: What todo About errors
+                // TODO:
             }
         }
         else {
             self.client.unmute(action.callUUID.toVGCallID()) { err in
-                // TODO: What todo About errors
+                // TODO:
             }
         }
         action.fulfill()
@@ -104,9 +104,8 @@ extension VonageCallController {
                             with: CXStartCallAction(call: callId, handle: CXHandle(type: .generic, value: to)),
                             completion: { err in
                                 guard err == nil else {
-                                    // WE should move this...
                                     self.client.hangup(callId.toVGCallID()) { err in
-                                        // Todo: handle error
+                                        // Todo: 
                                     }
                                     return
                                 }

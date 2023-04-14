@@ -1,5 +1,5 @@
 //
-//  Vonage+VGVoiceDelegate.swift
+//  CallController+VGVoiceDelegate.swift
 //  VonageSDKClientVOIPExample
 //
 //  Created by Ashley Arthur on 12/02/2023.
@@ -54,7 +54,6 @@ extension VonageCallController: VGVoiceClientDelegate {
         }
         self.vonageCallUpdates.send((uuid, CallStatus.completed(remote: true, reason: cxreason)))
     }
-    
     
     // MARK: VGVoiceClientDelegate LegStatus
     
