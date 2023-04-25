@@ -62,33 +62,6 @@ extension SceneDelegate {
     
     func bind() {
         let app =  UIApplication.shared.delegate as! AppDelegate
-        
-        // Regardless of user auth flow, we need to report incoming voip push
-        // Call Controller will need to handle session setup
-        // else fail the call if we cannot authenticate
-        app.pushController.voipPush.sink {
-            app.callController.reportVoipPush($0)
-        }
-        .store(in: &cancellables)
-
-        // On user login, initialise push and Vonage CPAAS Credentials
-        app.userController.user
-            .replaceError(with: nil)
-            .compactMap { $0 }
-            .sink { (user) in
-                app.callController.updateSessionToken(user.1)
-                app.pushController.initialisePushTokens()
-            }
-            .store(in: &cancellables)
-        
-        // Once the device has registered for push, we register them with backend 
-        app.pushController.pushKitToken
-            .combineLatest(app.pushController.notificationToken)
-            .filter { (t1,t2) in t1 != nil && t2 != nil }
-            .sink { token in
-                app.callController.registerPushTokens((user:token.1!,voip:token.0!))
-            }
-            .store(in: &cancellables)
 
         // Define our UI state as a function of the currenly logged in user
         app.userController.user

@@ -22,8 +22,11 @@ class UserController: NSObject {
     func login(username:String, pword:String) {
         
         // Dummy Implementation for testing purposes
-        let token = ""
-        
+        user.send((User(uname: "ash"), token))
+    }
+    
+    func restoreUser() {
+        // Dummy Implementation for testing purposes
         user.send((User(uname: "ash"), token))
     }
     

@@ -35,15 +35,15 @@ extension VonageCallController: VGVoiceClientDelegate {
     
     // MARK: VGVoiceClientDelegate Invites
     
-    func voiceClient(_ client: VGVoiceClient, didReceiveInviteForCall callId: String, from caller: String, withChannelType type: String) {
+    func voiceClient(_ client: VGVoiceClient, didReceiveInviteForCall callId: String, from caller: String, with type: VGVoiceChannelType) {
         let uuid = UUID(uuidString: callId)!
         self.vonageCalls.send(Call.inbound(id: uuid, from: caller, status: .ringing))
     }
     
-    func voiceClient(_ client: VGVoiceClient, didReceiveInviteCancelForCall callId: String, with reason: VGVoiceInviteCancelReasonType) {
+    func voiceClient(_ client: VGVoiceClient, didReceiveInviteCancelForCall callId: VGCallId, with reason: VGVoiceInviteCancelReasonType) {
         let uuid = UUID(uuidString: callId)!
         var cxreason: CXCallEndedReason = .failed
-        
+
         switch (reason){
         case .remoteTimeout: cxreason = .unanswered
         case .remoteReject: cxreason = .declinedElsewhere
@@ -55,11 +55,11 @@ extension VonageCallController: VGVoiceClientDelegate {
         self.vonageCallUpdates.send((uuid, CallStatus.completed(remote: true, reason: cxreason)))
     }
     
+    
     // MARK: VGVoiceClientDelegate LegStatus
     
-    func voiceClient(_ client: VGVoiceClient, didReceiveLegStatusUpdateForCall callId: String, withLegId legId: String, andStatus status: String) {
-        // For our one to one calls, we are only really interested in answered legs
-        if (status == "answered") {
+    func voiceClient(_ client: VGVoiceClient, didReceiveLegStatusUpdateForCall callId: String, withLegId legId: String, andStatus status: VGLegStatus) {
+        if (status == .answered ) {
             let uuid = UUID(uuidString: callId)!
             vonageCallUpdates.send((uuid, CallStatus.answered))
         }

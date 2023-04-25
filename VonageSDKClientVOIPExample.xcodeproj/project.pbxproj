@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		04BC063F8913B68CBD5AD164 /* Pods_VonageSDKClientVOIPExample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9787D52D08CB941D75FB3450 /* Pods_VonageSDKClientVOIPExample.framework */; };
+		D118E6E029E9EA9C0039EABA /* CallVisualView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D118E6DF29E9EA9C0039EABA /* CallVisualView.swift */; };
 		D1215927299980E2001BB563 /* CallController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1215926299980E2001BB563 /* CallController.swift */; };
 		D121592A299982A4001BB563 /* CallController+VGVoiceDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1215929299982A4001BB563 /* CallController+VGVoiceDelegate.swift */; };
 		D1215930299984FA001BB563 /* PushController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D121592F299984FA001BB563 /* PushController.swift */; };
@@ -33,6 +34,7 @@
 		349634D600C084FEBBC0823C /* Pods-VonageSDKClientVOIPExample.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-VonageSDKClientVOIPExample.debug.xcconfig"; path = "Target Support Files/Pods-VonageSDKClientVOIPExample/Pods-VonageSDKClientVOIPExample.debug.xcconfig"; sourceTree = "<group>"; };
 		6A29EF2241B7D3E5BF694A36 /* Pods-VonageSDKClientVOIPExample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-VonageSDKClientVOIPExample.release.xcconfig"; path = "Target Support Files/Pods-VonageSDKClientVOIPExample/Pods-VonageSDKClientVOIPExample.release.xcconfig"; sourceTree = "<group>"; };
 		9787D52D08CB941D75FB3450 /* Pods_VonageSDKClientVOIPExample.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_VonageSDKClientVOIPExample.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D118E6DF29E9EA9C0039EABA /* CallVisualView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallVisualView.swift; sourceTree = "<group>"; };
 		D1215926299980E2001BB563 /* CallController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallController.swift; sourceTree = "<group>"; };
 		D1215929299982A4001BB563 /* CallController+VGVoiceDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CallController+VGVoiceDelegate.swift"; sourceTree = "<group>"; };
 		D121592F299984FA001BB563 /* PushController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushController.swift; sourceTree = "<group>"; };
@@ -128,6 +130,7 @@
 				D1521C43299C395F00E7D572 /* CircularButton.swift */,
 				D1521C45299C396800E7D572 /* DialerView.swift */,
 				D1521C47299C410A00E7D572 /* CircularRingView.swift */,
+				D118E6DF29E9EA9C0039EABA /* CallVisualView.swift */,
 			);
 			path = UIViews;
 			sourceTree = "<group>";
@@ -330,6 +333,7 @@
 				D1521C46299C396800E7D572 /* DialerView.swift in Sources */,
 				D1F24388298187C600C49B3F /* LoginViewController.swift in Sources */,
 				D121593329998536001BB563 /* Call.swift in Sources */,
+				D118E6E029E9EA9C0039EABA /* CallVisualView.swift in Sources */,
 				D1F243772981846C00C49B3F /* DialerViewController.swift in Sources */,
 				D1F243732981846C00C49B3F /* AppDelegate.swift in Sources */,
 				D1F243752981846C00C49B3F /* SceneDelegate.swift in Sources */,

@@ -37,8 +37,8 @@ extension VonageCallController: CXProviderDelegate {
                 return
             }
             self.vonageCallUpdates.send((action.callUUID, .answered))
+            action.fulfill()
         }
-        action.fulfill()
     }
     
     func provider(_ provider: CXProvider, perform action: CXEndCallAction){

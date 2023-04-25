@@ -16,6 +16,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var callController: CallController!
     var pushController: PushController!
     var userController: UserController!
+    private var cancellables = Set<AnyCancellable>()
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Create Application Object Graph
@@ -26,6 +27,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         callController = VonageCallController(client: vonageClient)
         pushController = PushController()
         userController = UserController()
+        
+        // Bind Non UI related Subscribers
+        // Its important todo this here so we can respond to push notifications
+        // received when app has been terminated
+        bind()
         
         // Application onboarding
         let mediaType = AVMediaType.audio
@@ -39,6 +45,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             print("auth")
         }
 
+        try? AVAudioSession.sharedInstance().setCategory(.playAndRecord)
+        
         return true
     }
 
@@ -72,4 +80,41 @@ extension NSNotification {
     public static let didRegisterForRemoteNotificationNotification = NSNotification.Name("didRegisterForRemoteNotificationWithDeviceTokenNotification")
     public static let didFailToRegisterForRemoteNotification = NSNotification.Name("didFailToRegisterForRemoteNotificationsWithErrorNotification")
 
+}
+
+
+extension AppDelegate {
+    
+    func bind() {
+        self.pushController.initialisePushTokens()
+
+        pushController.voipPush.sink {
+            self.callController.reportVoipPush($0)
+        }
+        .store(in: &cancellables)
+        
+
+        
+        // On user login OR user restore, provide vonage sdk with required service token
+        // And setup push
+        userController.user
+            .replaceError(with: nil)
+            .compactMap { $0 }
+            .sink { (user) in
+                self.callController.updateSessionToken(user.1)
+            }
+            .store(in: &cancellables)
+        
+        userController.restoreUser()
+        
+        // Once the device has registered for push AND we have a logged in user
+        // register device with vonage
+        pushController.pushKitToken
+            .combineLatest(pushController.notificationToken)
+            .filter { (t1,t2) in t1 != nil && t2 != nil }
+            .sink { token in
+                self.callController.registerPushTokens((user:token.1!,voip:token.0!))
+            }
+            .store(in: &cancellables)
+    }
 }

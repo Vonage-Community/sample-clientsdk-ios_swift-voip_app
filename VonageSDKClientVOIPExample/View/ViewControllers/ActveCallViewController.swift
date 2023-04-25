@@ -28,11 +28,8 @@ class ActiveCallViewModel: ObservableObject {
 }
 
 class ActiveCallViewController: UIViewController {
-    var calleeLabel: UILabel!
-    
-    var callStatusLabel: UILabel!
-    var callStatusVisual: UIView!
-    var callStatusVisualTop: UIView!
+    var calleeLabel: UILabel!    
+    var callVisual: CallVisualView!
 
     var answerButton: UIButton!
     var rejectButton: UIButton!
@@ -60,24 +57,22 @@ class ActiveCallViewController: UIViewController {
             return
         }
         _ = cancels.map { $0.cancel() }
-        self.callStatusVisual.layer.removeAnimation(forKey: "ringing")
-        self.callStatusVisual.layer.removeAnimation(forKey: "answer")
-        self.callStatusVisualTop.layer.removeAnimation(forKey: "rejected")
-//
-//        viewModel.$call.map {
-//            switch ($0) {
-//            case .outbound(_,let to, _):
-//                return to
-//            case .inbound(_,let from):
-//                return from
-//            }
-//        }
-//        .sink(receiveValue: { (s:String) in
-//            self.calleeLabel.text = s
-//        })
-//        .store(in: &cancels)
+        callVisual.clearAnimation()
+
+        viewModel.$call.first()
+            .map { (call) -> String in
+                if case let .outbound(_,to,_) = call { return to }
+                if case let .inbound(_,from,_) = call { return from }
+                return ""
+            }
+            .receive(on: RunLoop.main)
+            .sink(receiveValue: { (s:String) in
+                self.calleeLabel.text = s
+            })
+            .store(in: &cancels)
         
         viewModel.$call
+            .receive(on: RunLoop.main)
             .sink(receiveValue: { call in
                 switch (call) {
                 case .inbound(_,_, let status):
@@ -99,51 +94,23 @@ class ActiveCallViewController: UIViewController {
             .store(in: &cancels)
 
         
-        
         viewModel.$call
             .receive(on: RunLoop.main)
-            .print("FOOd")
             .sink { call in
                 switch(call.status) {
-            case .ringing:
-                self.callStatusVisual.backgroundColor = .systemGray
-                self.callStatusVisualTop.backgroundColor = .black
-                self.callStatusVisual.layer.add(ActiveCallViewController.RingingAnimation, forKey: "ringing")
-                self.callStatusLabel.text = "ringing"
-            case .answered:
-                self.callStatusVisual.layer.removeAnimation(forKey: "ringing")
-                self.callStatusVisual.layer.add(ActiveCallViewController.answerAnimation, forKey: "answer")
-                self.callStatusVisual.backgroundColor = .systemGreen
-                self.callStatusVisualTop.backgroundColor = .systemGreen
-                self.callStatusLabel.text = "answered"
-//            case .rejected:
-//                self.clearAnimation()
-//                self.callStatusVisualTop.layer.add(ActiveCallViewController.RejectedAnimation, forKey: "rejected")
-//                self.callStatusLabel.text = "rejected"
-//                self.callStatusVisual.backgroundColor = .systemBackground
-//                self.callStatusVisualTop.backgroundColor = .red
-//                self.eventuallyDismiss()
-
-            case .completed :
-                self.clearAnimation()
-                self.callStatusVisual.backgroundColor = .systemGray
-                self.callStatusVisualTop.backgroundColor = .systemGray
-                self.callStatusLabel.text = "complete"
-                self.eventuallyDismiss()
-
+                case .ringing:
+                    self.callVisual.setCallState(.ringing)
+                case .answered:
+                    self.callVisual.setCallState(.answered)
+                case .completed:
+                    self.callVisual.setCallState(.completed)
+                    self.eventuallyDismiss()
+                }
             }
-        }
-        .store(in: &cancels)
+            .store(in: &cancels)
+
     }
-    
-    func clearAnimation() {
-        CATransaction.begin()
-        self.callStatusVisual.layer.removeAnimation(forKey: "answer")
-        self.callStatusVisual.layer.removeAnimation(forKey: "ringing")
-        self.callStatusVisualTop.layer.removeAnimation(forKey: "rejected")
-        CATransaction.commit()
-    }
-    
+
     func eventuallyDismiss() {
         Timer.publish(every: 1.5, on: RunLoop.main, in: .default).autoconnect().first().sink {  _ in
             if self.navigationController?.topViewController == self{
@@ -167,52 +134,21 @@ class ActiveCallViewController: UIViewController {
         calleeLabel.textAlignment = .center
         calleeLabel.font = UIFont.preferredFont(forTextStyle: .title1)
         
-        callStatusLabel = UILabel()
-        calleeLabel.textAlignment = .center
-        callStatusLabel.translatesAutoresizingMaskIntoConstraints = false
+        callVisual = CallVisualView()
         
-        callStatusVisual = UICustomRingView()
-        callStatusVisual.backgroundColor = .systemGray2
-        
-        callStatusVisualTop = UICustomRingView()
-        callStatusVisualTop.backgroundColor = .black
-        
-        let callStatusVisualParent = UIView()
-        callStatusVisualParent.translatesAutoresizingMaskIntoConstraints = false
-        callStatusVisualParent.addSubview(callStatusVisual)
-        callStatusVisualParent.addSubview(callStatusVisualTop)
-        callStatusVisualParent.addSubview(callStatusLabel)
-
-        let callStatusVisualSize = 250.0
-//
-        let callVisualConstraints = [
-            callStatusVisual.heightAnchor.constraint(equalToConstant: callStatusVisualSize),
-            callStatusVisual.widthAnchor.constraint(equalToConstant: callStatusVisualSize),
-            callStatusVisual.centerXAnchor.constraint(equalTo: callStatusVisualParent.centerXAnchor),
-            callStatusVisual.centerYAnchor.constraint(equalTo: callStatusVisualParent.centerYAnchor),
-            
-            callStatusVisualTop.heightAnchor.constraint(equalToConstant: callStatusVisualSize),
-            callStatusVisualTop.widthAnchor.constraint(equalToConstant: callStatusVisualSize),
-            callStatusVisualTop.centerXAnchor.constraint(equalTo: callStatusVisualParent.centerXAnchor),
-            callStatusVisualTop.centerYAnchor.constraint(equalTo: callStatusVisualParent.centerYAnchor),
-
-            callStatusLabel.centerXAnchor.constraint(equalTo: callStatusVisualParent.centerXAnchor),
-            callStatusLabel.centerYAnchor.constraint(equalTo: callStatusVisualParent.centerYAnchor)
-        ]
-        
-        answerButton = UIButton()
+        answerButton = CircularButton()
         answerButton.translatesAutoresizingMaskIntoConstraints = false
         answerButton.setTitle("X", for: .normal)
         answerButton.backgroundColor = .green
         answerButton.addTarget(self, action: #selector(answerButtonPressed), for: .touchUpInside)
         
-        rejectButton = UIButton()
+        rejectButton = CircularButton()
         rejectButton.translatesAutoresizingMaskIntoConstraints = false
         rejectButton.setTitle("X", for: .normal)
         rejectButton.backgroundColor = .systemRed
         rejectButton.addTarget(self, action: #selector(rejectedButtonPressed), for: .touchUpInside)
         
-        hangupButton = UIButton()
+        hangupButton = CircularButton()
         hangupButton.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         hangupButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         hangupButton.translatesAutoresizingMaskIntoConstraints = false
@@ -220,7 +156,7 @@ class ActiveCallViewController: UIViewController {
         hangupButton.backgroundColor = .systemRed
         hangupButton.addTarget(self, action: #selector(hangupButtonPressed), for: .touchUpInside)
         
-        muteButton = UIButton()
+        muteButton = CircularButton()
         muteButton.backgroundColor = UIColor.systemGray
         muteButton.translatesAutoresizingMaskIntoConstraints = false
         muteButton.setTitle("X", for: .normal)
@@ -266,11 +202,6 @@ class ActiveCallViewController: UIViewController {
             
             callControlRoot.heightAnchor.constraint(greaterThanOrEqualToConstant: callControlButtonSize),
         ]
-        
-        muteButton.layer.cornerRadius = callControlButtonSize * 0.5
-        hangupButton.layer.cornerRadius = callControlButtonSize * 0.5
-        rejectButton.layer.cornerRadius = callControlButtonSize * 0.5
-        answerButton.layer.cornerRadius = callControlButtonSize * 0.5
 
         let stackView = UIStackView()
         stackView.translatesAutoresizingMaskIntoConstraints = false
@@ -278,11 +209,11 @@ class ActiveCallViewController: UIViewController {
         stackView.distribution = .equalCentering
         stackView.alignment = .fill
         stackView.addArrangedSubview(calleeLabel)
-        stackView.addArrangedSubview(callStatusVisualParent)
+        stackView.addArrangedSubview(callVisual)
         stackView.addArrangedSubview(callControlRoot)
         view.addSubview(stackView)
         
-        NSLayoutConstraint.activate(callVisualConstraints + callControlConstraints + [
+        NSLayoutConstraint.activate(callControlConstraints + [
             stackView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             stackView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.75),
             stackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 50),
@@ -317,77 +248,6 @@ class ActiveCallViewController: UIViewController {
 }
 
 fileprivate extension ActiveCallViewController{
-    
-    static let RingingAnimation: CAAnimation = { () -> CAAnimation in
-        var anim = [CABasicAnimation]()
-        let transformAnim = CABasicAnimation(keyPath: "transform.scale")
-        transformAnim.duration = 2.0
-        transformAnim.repeatCount = 200
-        transformAnim.fromValue = 0.0
-        transformAnim.toValue = 5.0
-        transformAnim.timingFunction = CAMediaTimingFunction(name: CAMediaTimingFunctionName.easeOut)
-        anim.append(transformAnim)
-
-        let alphaAnim = CABasicAnimation(keyPath: #keyPath(CALayer.opacity))
-        alphaAnim.duration = 2.0
-        alphaAnim.repeatCount = 200
-        alphaAnim.fromValue = [1.0]
-        alphaAnim.toValue = [0.0]
-        alphaAnim.fillMode = .forwards
-        transformAnim.timingFunction = CAMediaTimingFunction(name: CAMediaTimingFunctionName.easeOut)
-
-        anim.append(alphaAnim)
-        
-        let group = CAAnimationGroup()
-//        group.timingFunction = CAMediaTimingFunction(name: CAMediaTimingFunctionName.easeOut)
-        group.animations = anim
-        group.duration = 10.0
-        group.repeatCount = 200
-        
-        return group
-    }()
-    
-    
-    static let answerAnimation: CAAnimation = { () -> CAAnimation in
-        var anim = [CAAnimation]()
-        let transformAnim = CAKeyframeAnimation(keyPath: "transform.scale")
-        transformAnim.duration = 2
-        transformAnim.repeatCount = 200
-        transformAnim.values = [1.0, 1.1, 1.0]
-        transformAnim.keyTimes = [0, 0.333, 1]
-        transformAnim.timingFunctions = [
-            CAMediaTimingFunction(name: CAMediaTimingFunctionName.easeInEaseOut),
-            CAMediaTimingFunction(name: CAMediaTimingFunctionName.easeInEaseOut)
-        ]
-        anim.append(transformAnim)
-        
-        let group = CAAnimationGroup()
-        group.animations = anim
-        group.duration = 4
-        group.repeatCount = 200
-        
-        return group
-    }()
-    
-    
-    static let RejectedAnimation: CAAnimation = { () -> CAAnimation in
-        var anim = [CABasicAnimation]()
-
-        let alphaAnim = CABasicAnimation(keyPath: #keyPath(CALayer.opacity))
-        alphaAnim.duration = 0.5
-        alphaAnim.repeatCount = 4
-        alphaAnim.fromValue = [1.0]
-        alphaAnim.toValue = [0.0]
-        alphaAnim.timingFunction = CAMediaTimingFunction(name: CAMediaTimingFunctionName.easeOut)
-        anim.append(alphaAnim)
-        
-        let group = CAAnimationGroup()
-        group.animations = anim
-        group.duration = 2
-        group.repeatCount = 1
-        
-        return group
-    }()
     
     static let ButtonPressedAnimation: CAAnimation = { () -> CAAnimation in
         var anim = [CAAnimation]()
