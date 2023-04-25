@@ -46,8 +46,8 @@ extension VonageCallController: VGVoiceClientDelegate {
 
         switch (reason){
         case .remoteTimeout: cxreason = .unanswered
-        case .remoteReject: cxreason = .declinedElsewhere
-        case .remoteAnswer: cxreason = .answeredElsewhere
+        case .rejectedElsewhere: cxreason = .rejectedElsewhere
+        case .answeredElsewhere: cxreason = .answeredElsewhere
         case .remoteCancel: cxreason = .remoteEnded
         @unknown default:
             fatalError()

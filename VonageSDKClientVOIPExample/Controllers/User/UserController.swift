@@ -18,7 +18,6 @@ enum UserControllerErrors:Error {
 class UserController: NSObject {
     
     var user =  CurrentValueSubject<(User,UserToken)?,UserControllerErrors>(nil)
-    
     func login(username:String, pword:String) {
         
         // Dummy Implementation for testing purposes
