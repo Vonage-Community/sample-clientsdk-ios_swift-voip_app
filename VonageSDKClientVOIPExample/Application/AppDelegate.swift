@@ -20,20 +20,37 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Create Application Object Graph
+        
+        // Vonage Client is a stateful object and idelly should be initialised once
+        // and shared between controllers
         let vonageClient = VGVoiceClient()
         vonageClient.setConfig(.init(region: .US))
+        VGVoiceClient.isUsingCallKit = true
         VGBaseClient.setDefaultLoggingLevel(.debug)
+    
         
-        callController = VonageCallController(client: vonageClient)
+        // Simple 'manager' classes to orchestate functionality
+        // Its assumed integrating applications will already have their
+        // own versions of 'pushController' and 'userController' already
+        // Within the sample code we have naive/dummy implementations for both
+        // to showcase typical integration
         pushController = PushController()
         userController = UserController()
         
-        // Bind Non UI related Subscribers
-        // Its important todo this here so we can respond to push notifications
-        // received when app has been terminated
-        bind()
+        // The Call Controller is an example of an integration between Application
+        // and the vonage sdk where we orchestrate the different delegate callbacks
+        // into the relevant subsystems. In this sample we demonstrate what that would look
+        // like in terms of a classic VOIP app using Callkit.
+        callController = VonageCallController(client: vonageClient)
         
-        // Application onboarding
+        // Bind Non UI related Controllers
+        // Its important to do this early in the app startup cylce so we can respond
+        // to push notifications received when the app is not running
+        bindControllers()
+        
+        // Setup Mic and Audio Session
+        // Again its important to NOT tie this to any UI Component lifecycle
+        // so we can handle voip calls when app is not running
         let mediaType = AVMediaType.audio
         let authorizationStatus = AVCaptureDevice.authorizationStatus(for: mediaType)
         switch authorizationStatus {
@@ -82,33 +99,38 @@ extension NSNotification {
 
 }
 
-
 extension AppDelegate {
     
-    func bind() {
+    func bindControllers() {
+        
+        // The vonage sdk uses push notifications to be informed of incomming calls
+        // Here we instruct our dummy push implementation to start acquiring device tokens
+        // for later registration with vonage backend.
         self.pushController.initialisePushTokens()
 
+        // Voip push notifications should be forwarded to the vonage client
         pushController.voipPush.sink {
             self.callController.reportVoipPush($0)
         }
         .store(in: &cancellables)
         
-
-        
-        // On user login OR user restore, provide vonage sdk with required service token
-        // And setup push
+        // Integrating applications will most likely already have their user auth flow
+        // defined. Typically users authentication will be restored from keychain on app startup.
+        // We should aim to provide a vonage bearer token to the sdk client as soon as possible in the app
+        // startup flow so we can handle incoming calls
         userController.user
             .replaceError(with: nil)
             .compactMap { $0 }
             .sink { (user) in
+                // update vonage bearer token
                 self.callController.updateSessionToken(user.1)
             }
             .store(in: &cancellables)
         
         userController.restoreUser()
         
-        // Once the device has registered for push AND we have a logged in user
-        // register device with vonage
+        // Once the device has registered for push AND we have an authenticated user
+        // register device tokens with vonage
         pushController.pushKitToken
             .combineLatest(pushController.notificationToken)
             .filter { (t1,t2) in t1 != nil && t2 != nil }

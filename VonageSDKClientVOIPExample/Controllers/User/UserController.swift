@@ -18,15 +18,17 @@ enum UserControllerErrors:Error {
 class UserController: NSObject {
     
     var user =  CurrentValueSubject<(User,UserToken)?,UserControllerErrors>(nil)
+    var token = ""
+    
     func login(username:String, pword:String) {
         
         // Dummy Implementation for testing purposes
-        user.send((User(uname: "ash"), token))
+        user.send((User(uname: "user1"), token))
     }
     
     func restoreUser() {
         // Dummy Implementation for testing purposes
-        user.send((User(uname: "ash"), token))
+        user.send((User(uname: "user1"), token))
     }
     
 }

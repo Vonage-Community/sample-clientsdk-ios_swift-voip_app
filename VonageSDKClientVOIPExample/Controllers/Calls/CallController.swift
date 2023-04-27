@@ -19,12 +19,16 @@ protocol CallController {
 
     // report VOIP Push to callkit
     func reportVoipPush(_ notification:PKPushPayload)
+    
     // Callkit actions initiated from custom application UI as opposed to System UI.
     func reportCXAction(_ cxaction:CXAction)
+    
     // Provide Vonage Client with user JWT token for connection auth.
     func updateSessionToken(_ token:String)
+    
     // Register device notification tokens with Vonage
     func registerPushTokens(_ t:PushToken)
+    
     // Special case for CXStartCallAction
     func startOutboundCall(_ context:[String:String]) -> UUID
 }
@@ -37,9 +41,8 @@ class VonageCallController: NSObject {
     // VGClient
     let client: VGVoiceClient
 
-    // We create a series of Subjects ( aka imperative publishers) to help
+    // We create a series of Subjects (imperative publishers) to help
     // organise the different delegate callbacks received from VGClient
-    // Integrating applications are free to choose what ever method best appeals,
     let vonageWillReconnect = PassthroughSubject<Void, Never>()
     let vonageDidReconnect = PassthroughSubject<Void, Never>()
     let vonageSessionError = PassthroughSubject<VGSessionErrorReason, Never>()
@@ -73,12 +76,11 @@ class VonageCallController: NSObject {
         
         bindCallController()
         bindCallkit()
-        
     }
 }
 
 extension VonageCallController: CallController {
-    // Calls updates are 'demuxed' into seperate streams to help  subscribers (like UIs)
+    // Calls updates are 'demuxed' into seperate streams to help subscribers (like UIs)
     // concentrate on specific call updates
     var calls: AnyPublisher<CallStream,Never> {
         return vonageCalls.map { call in
@@ -162,7 +164,6 @@ extension VonageCallController {
     
     func bindCallController() {
         
-        // TODO: PR-371
         vonageToken.compactMap { $0 }.filter { $0 != "" } .first().flatMap { _ in
             Future<String?,Error> { p in
                 self.client.createSession(self.vonageToken.value ?? "") { err, session in

@@ -49,16 +49,14 @@ extension VonageCallController: CXProviderDelegate {
                 
         if case .inbound(_,_,.ringing) = call {
             self.client.reject(action.callUUID.toVGCallID()){ err in
-                // TODO:
+                action.fulfill()
             }
         }
         else {
             self.client.hangup(action.callUUID.toVGCallID()){ err in
-                // TODO:
+                action.fulfill()
             }
         }
-                           
-        action.fulfill()
     }
     
     func provider(_ provider: CXProvider, perform action: CXSetMutedCallAction) {

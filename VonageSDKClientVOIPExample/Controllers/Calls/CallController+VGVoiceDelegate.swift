@@ -11,14 +11,8 @@ import CallKit
 
 typealias CallUpdate = (call:UUID, leg:UUID, status:String)
 
-// Consts
-let VonageLegStatusRinging = "ringing"
-let VonageLegStatusAnswered = "answered"
-let VonageLegStatusCompleted = "completed"
-let LocalComplete = "LocalComplete"
 
 extension VonageCallController: VGVoiceClientDelegate {
-    
     // MARK: VGVoiceClientDelegate Sessions
 
     func clientWillReconnect(_ client: VGBaseClient) {
@@ -40,14 +34,14 @@ extension VonageCallController: VGVoiceClientDelegate {
         self.vonageCalls.send(Call.inbound(id: uuid, from: caller, status: .ringing))
     }
     
-    func voiceClient(_ client: VGVoiceClient, didReceiveInviteCancelForCall callId: VGCallId, with reason: VGVoiceInviteCancelReasonType) {
+    func voiceClient(_ client: VGVoiceClient, didReceiveInviteCancelForCall callId: VGCallId, with reason: VGVoiceInviteCancelReason) {
         let uuid = UUID(uuidString: callId)!
         var cxreason: CXCallEndedReason = .failed
 
         switch (reason){
         case .remoteTimeout: cxreason = .unanswered
-        case .rejectedElsewhere: cxreason = .rejectedElsewhere
         case .answeredElsewhere: cxreason = .answeredElsewhere
+        case .rejectedElsewhere: cxreason = .declinedElsewhere
         case .remoteCancel: cxreason = .remoteEnded
         @unknown default:
             fatalError()
@@ -65,13 +59,17 @@ extension VonageCallController: VGVoiceClientDelegate {
         }
     }
     
-    func voiceClient(_ client: VGVoiceClient, didReceiveHangupForCall callId: String, withQuality callQuality: VGRTCQuality, isRemote:Bool) {
+    func voiceClient(_ client: VGVoiceClient, didReceiveHangupForCall callId: VGCallId, withQuality callQuality: VGRTCQuality, reason: VGHangupReason) {
         let uuid = UUID(uuidString: callId)!
-        if (isRemote == true) {
-            vonageCallUpdates.send((uuid, CallStatus.completed(remote: true, reason: .remoteEnded))) 
+        
+        var cxreason: CXCallEndedReason? = nil
+        switch (reason) {
+        case .remoteHangup: cxreason = .remoteEnded
+        default: cxreason = nil
         }
-        else {
-            vonageCallUpdates.send((uuid, CallStatus.completed(remote: false, reason: nil)))
-        }
+        
+        vonageCallUpdates.send((uuid, CallStatus.completed(remote: true, reason: cxreason)))
+    
     }
+
 }
